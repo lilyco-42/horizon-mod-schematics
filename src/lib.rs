@@ -218,6 +218,7 @@ static ACTIVE_Y: AtomicI32 = AtomicI32::new(0);
 static ROT_IDX: AtomicU32 = AtomicU32::new(0);
 static MIRROR_IDX: AtomicU32 = AtomicU32::new(0);
 static GHOST_ENABLED: AtomicBool = AtomicBool::new(true);
+static HUD_SHOWN: AtomicBool = AtomicBool::new(false);
 static BLOCK_CONNECTED: AtomicBool = AtomicBool::new(false);
 static ANCHOR_SET: AtomicBool = AtomicBool::new(false);
 static ANCHOR_X: AtomicI32 = AtomicI32::new(6);
@@ -757,7 +758,10 @@ impl Hooks for SchematicsMod {
         if event.action != KeyAction::Press || !host.playing() {
             return;
         }
-        if event.key == "key.keyboard.m" && !host.is_down(ID, KEY_MENU) {
+        if event.key == "key.keyboard.f9" {
+            let prev = HUD_SHOWN.load(Ordering::Relaxed);
+            HUD_SHOWN.store(!prev, Ordering::Relaxed);
+        } else if event.key == "key.keyboard.m" && !host.is_down(ID, KEY_MENU) {
             show_checklist_and_reanchor(host);
         } else if event.key == "key.keyboard.n" && !host.is_down(ID, KEY_NEXT) {
             cycle_next_blueprint(host);
@@ -1043,7 +1047,7 @@ impl Hooks for SchematicsMod {
     }
 
     fn render_gui_post(&self, host: &dyn ClientHost, event: &mut RenderGuiPostEvent<'_>) {
-        if !host.on(ID) || !GHOST_ENABLED.load(Ordering::Relaxed) {
+        if !host.on(ID) || !GHOST_ENABLED.load(Ordering::Relaxed) || !HUD_SHOWN.load(Ordering::Relaxed) {
             return;
         }
         let idx = BP_IDX.load(Ordering::Relaxed) as usize % BLUEPRINTS.len();
